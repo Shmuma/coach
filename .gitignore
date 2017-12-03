@@ -15,4 +15,4 @@ roboschool
 *.orig
 docs/site
 coach_env
-img_qr
+img_qr*
