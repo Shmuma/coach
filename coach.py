@@ -14,6 +14,9 @@
 # limitations under the License.
 #
 
+import matplotlib as mpl
+mpl.use("Agg")
+
 import sys, inspect, re
 import os
 import json
