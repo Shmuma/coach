@@ -22,13 +22,26 @@ class QuantileRegressionDQNAgent(ValueOptimizationAgent):
     def __init__(self, env, tuning_parameters, replicated_device=None, thread_id=0):
         ValueOptimizationAgent.__init__(self, env, tuning_parameters, replicated_device, thread_id)
         self.quantile_probabilities = np.ones(self.tp.agent.atoms) / float(self.tp.agent.atoms)
+        self.done_state = None
+        self.normal_states = []
 
     # prediction's format is (batch,actions,atoms)
     def get_q_values(self, quantile_values):
         return np.dot(quantile_values, self.quantile_probabilities)
 
+    def _gather_states(self, states, overs, normal_count=5):
+        if self.done_state is not None and len(self.normal_states) == normal_count:
+            return
+        for s, o in zip(states, overs):
+            if o and self.done_state is None:
+                self.done_state = s
+                continue
+            if len(self.normal_states) < normal_count:
+                self.normal_states.append(s)
+
     def learn_from_batch(self, batch):
         current_states, next_states, actions, rewards, game_overs, _ = self.extract_batch(batch)
+        self._gather_states(current_states, game_overs)
 
         # get the quantiles of the next states and current states
         next_state_quantiles = self.main_network.target_network.predict(next_states)
